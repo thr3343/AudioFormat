@@ -19,14 +19,16 @@ constexpr uint32_t sso = std::string{}.capacity();
 
 struct [[gnu::aligned(16)]] PCMHeaderRef
 {
-    uint32_t size;
-    uint32_t SampleRate;
-    uint32_t bytePlaybackrate : 16;
-    uint32_t bitDepth : 4;
-    uint32_t channels : 4;
-    uint32_t samples;
+  auto operator=(const PCMHeaderRef &) -> PCMHeaderRef & = default;
+  auto operator=(PCMHeaderRef &&) -> PCMHeaderRef & = default;
+  uint32_t size;
+  uint32_t SampleRate;
+  uint32_t bytePlaybackrate : 24;
+  uint32_t bitDepth : 4;
+  uint32_t channels : 4;
+  uint32_t samples;
 
-   [[nodiscard]] auto durationSecs() -> uint64_t {return samples/SampleRate;}
+  [[nodiscard]] auto durationSecs() -> uint64_t { return size / bytePlaybackrate; }
 
 };
 
