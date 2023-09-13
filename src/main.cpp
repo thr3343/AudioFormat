@@ -1,25 +1,25 @@
 
 
-#include <__fwd/string_view.h>
 #include <array>
 #include <bit>
 #include <cstdint>
 #include <cstdio>
-#include <filesystem>
-#include <streambuf>
-#include <string_view>
+
+#include <string>
 #include <immintrin.h>
+#include <vector>
 
 using v4 [[gnu::vector_size(32)]] = uint16_t;
 using v4a [[gnu::vector_size(32)]] = uint32_t;
 using v4b [[gnu::vector_size(4)]] = uint8_t;
 using v2b [[gnu::vector_size(2)]] = uint8_t;
+using v16b [[gnu::vector_size(16), gnu::aligned(16)]] = uint8_t;
 
 constexpr uint32_t sso = std::string{}.capacity();
 
 struct [[gnu::aligned(16)]] PCMHeaderRef
 {
-    uint32_t size_t;
+    uint32_t size;
     uint32_t SampleRate;
     uint32_t bytePlaybackrate : 16;
     uint32_t bitDepth : 4;
@@ -92,6 +92,7 @@ auto extractPCMHeader(std::array<uint8_t, 64> headerRef) -> PCMHeaderRef
     printf("%s \n", Subchunk2data.c_str());
     printf("Subchunk2Size: %i \n", Subchunk2Size);
     printf("%s \n", chunkID.c_str());
+    printf("Duration %im %is\n", (size/byteRate/60), (size/byteRate) % 60);
     return 
     {
         size,
@@ -115,11 +116,12 @@ auto pcm2Array(std::string_view imgDir = "tst.wav")
 
     fread(PCMheader.data(), sizeof(uint8_t), PCMheader.size(), f);
 
-    extractPCMHeader(PCMheader);
+    const auto headerDetails = extractPCMHeader(PCMheader);
+    auto PCMdata = std::vector<type>(headerDetails.size/sizeof(type));
 
+    fread(PCMdata.data(), sizeof(type), PCMdata.size(), f);
 
-
-    // return std::to_array<type>() ;
+    return PCMdata;
 }
 
 
@@ -127,6 +129,6 @@ auto pcm2Array(std::string_view imgDir = "tst.wav")
 auto main() -> int
 {
     printf("sso size: %i \n", sso);
-    pcm2Array<uint16_t>();
+    printf("%zu \n",(pcm2Array<v16b>().size()));
 
 }
